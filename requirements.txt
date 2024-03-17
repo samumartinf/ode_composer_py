@@ -1,5 +1,5 @@
 pytest
-numpy
+numpy>=1.18
 matplotlib
 scipy
 cvxpy
@@ -8,3 +8,4 @@ sklearn
 bokeh
 pandas
 statsmodels
+pre-commit

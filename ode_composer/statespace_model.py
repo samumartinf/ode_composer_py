@@ -6,6 +6,8 @@ from sympy import Matrix
 from .signal_preprocessor import SignalPreprocessor
 import copy
 import re
+import matplotlib.pyplot as plt
+import math
 
 
 class StateSpaceModel(object):
@@ -73,7 +75,7 @@ class StateSpaceModel(object):
             ss += f"d{state_name}="
             param_dict = self.get_parameters_for_state(state_name=state_name)
             for rr, p_name in zip(rhs, param_dict.keys()):
-                m = re.search("([a-z]+)([1-9]+),([1-9]+)", p_name)
+                m = re.search("([a-z]+)([1-9]+),([0-9]+)", p_name)
                 p_value = f"+{m[1]}{m[2]}_{m[3]}"
                 term = rr.symbolic_expression
                 ss += f"{p_value}*{str(term).replace('**','^')}"
@@ -89,7 +91,8 @@ class StateSpaceModel(object):
             for rr, p_name in zip(rhs, param_dict.keys()):
                 if parameter_table:
                     m = re.search("([a-z]+)([1-9]+),([1-9]+)", p_name)
-                    p_value = f"+{m[1]}_{{{m[2]},{m[3]}}}"
+                    p_sign = rr.get_constant_sign()
+                    p_value = f"{p_sign}{m[1]}_{{{m[2]},{m[3]}}}"
                 else:
                     p_value = f"\\num{{{float(rr.constant):+.2e}}}"
                 ss += f"{p_value}{latex(rr.symbolic_expression)}"
@@ -129,7 +132,7 @@ class StateSpaceModel(object):
             p_dict = self.get_parameters_for_state(
                 state_name=state_name, latex_format=latex_format
             )
-            max_width = 9  # using +.2e format that results 9 chars
+            max_width = 8  # using .2e format that results 8 chars
             if latex_format:
                 extra_columns = max_terms - len(p_dict)
                 columns = " & " * extra_columns
@@ -141,7 +144,7 @@ class StateSpaceModel(object):
                 + new_line
             )
             ss += (
-                sep.join([f"{v:+.2e}" for v in list(p_dict.values())])
+                sep.join([f"{abs(v):.2e}" for v in list(p_dict.values())])
                 + columns
                 + new_line
             )
@@ -166,6 +169,31 @@ class StateSpaceModel(object):
                 p_str = f"{m[1]}{state_num}{divider}{m[2]}"
             param_dict.update({p_str: rr.constant})
         return param_dict
+
+    def plot_parameter_table(self, file_name=None):
+        plt.style.use("ggplot")
+        fig = plt.figure()
+        fig.subplots_adjust(hspace=0.4, wspace=0.4)
+        for i, state_name in zip(
+            range(1, len(self.state_vector) + 1), self.state_vector.keys()
+        ):
+            fig.add_subplot(len(self.state_vector), 1, i)
+            p_dict = self.get_parameters_for_state(
+                state_name=state_name, latex_format=True
+            )
+            x_pos = [i for i, _ in enumerate(p_dict)]
+            plt.barh(
+                x_pos,
+                [math.log10(abs(p)) for p in p_dict.values()],
+                color="green",
+            )
+            plt.yticks(x_pos, [rf"{p}" for p in p_dict.keys()], fontsize=7)
+            plt.xlabel(r"$\log_{10}(w)$")
+
+        if file_name:
+            plt.savefig(file_name, format="pdf")
+        else:
+            plt.show()
 
     def add_state_equation(
         self, states: Dict[str, Dict[str, str]], parameters: Dict[str, float]
