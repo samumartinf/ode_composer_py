@@ -195,6 +195,15 @@ class GPSignalPreprocessor(SignalPreprocessor):
             self.noisy_kernels[key] = kernel + WhiteKernel(
                 noise_level=1, noise_level_bounds=(1e-7, 1e7)
             )
+    
+    def get_avaialble_kernels(self):
+        """
+        Get the available kernels for Gaussian Process regression.
+
+        Returns:
+        - array-like: The available kernels.
+        """
+        return self.kernels.keys()
 
     def interpolate(self, return_extended_time=False, noisy_obs=True):
         """

@@ -85,6 +85,17 @@ class StateSpaceModel(object):
         return ode_eq
 
     def to_latex(self, filename=None, parameter_table=False):
+        """
+        Converts the state space model to LaTeX format.
+
+        Args:
+            filename (str, optional): The name of the file to save the LaTeX code. If not provided, the LaTeX code will be returned as a string. Defaults to None.
+            parameter_table (bool, optional): Flag indicating whether to include a parameter table in the LaTeX code. Defaults to False.
+
+        Returns:
+            str: The LaTeX code representing the state space model.
+
+        """
         ss = "\\begin{eqnarray}"
         for state_name, rhs in self.state_vector.items():
             m = re.search("([a-z]+)([1-9]+)", state_name)
