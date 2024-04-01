@@ -18,6 +18,47 @@ logger = logging.getLogger(f"ode_composer_{os.getpid()}")
 
 
 class SBL(object):
+    """
+    Sparse Bayesian Learning (SBL) class for estimating model parameters.
+
+    Args:
+        dict_mtx (np.ndarray): The dictionary matrix.
+        data_vec (np.ndarray): The data vector.
+        lambda_param (float): The lambda parameter.
+        dict_fcns (List[MultiVariableFunction], optional): List of dictionary functions. Defaults to None.
+        state_name (str, optional): The name of the state. Defaults to None.
+        config (Dict, optional): Configuration settings. Defaults to None.
+
+    Attributes:
+        linear_model: The linear model.
+        z: The parameter z.
+        w_estimates (List[float]): List of estimated weights.
+        z_estimates (List[float]): List of estimated z values.
+        gamma_estimates (List[float]): List of estimated gamma values.
+        dict_fcns (List[MultiVariableFunction]): List of dictionary functions.
+        lambda_param (float): The lambda parameter.
+        state_name (str): The name of the state.
+        config (Dict): Configuration settings.
+        non_zero_idx: The indices of non-zero gamma values.
+        solver_keywords (Dict): Dictionary of arguments for problem.solve.
+
+    Properties:
+        lambda_param (float): Getter and setter for the lambda parameter.
+        dict_fcns: Getter and setter for the dictionary functions.
+        config: Getter and setter for the configuration settings.
+
+    Methods:
+        data_fit: Computes the data fit.
+        regularizer: Computes the regularizer.
+        objective_fn: Computes the objective function.
+        estimate_model_parameters: Estimates the model parameters.
+        update_z: Computes the z value.
+        compute_model_structure: Computes the model structure.
+        compute_non_zero_idx: Computes the indices of non-zero gamma values.
+        get_results: Gets the results.
+
+    """
+
     def __init__(
         self,
         dict_mtx: np.ndarray,
@@ -182,6 +223,18 @@ class SBL(object):
         # print(f'state: {self.state_name} Sigma_y cond: {np.linalg.cond(np.linalg.pinv(Sigma_y, hermitian=True))} gamma: {np.divide(np.abs(w_actual),np.sqrt(self.z.value))}')
 
     def compute_model_structure(self, max_iter=10):
+        """
+        Computes the model structure using the Sparse Bayesian Learning (SBL) algorithm.
+
+        Args:
+            max_iter (int): The maximum number of iterations for the SBL algorithm. Defaults to 10.
+
+        Raises:
+            SBLError: If no SBL solution can be computed for the given state name.
+
+        Returns:
+            None
+        """
         # TODO transform this into a generator
         # initialize convergence monitor
         conv_monitor = ConvergenceMonitor(SBL_problem=self)
@@ -210,38 +263,53 @@ class SBL(object):
                     )
 
     def compute_non_zero_idx(self):
-        gamma = np.divide(
-            np.abs(self.w_estimates[-1]), np.sqrt(self.z_estimates[-1])
-        )
-        tmp = np.nonzero(gamma > np.finfo(float).eps)
-        self.non_zero_idx = tmp[0]
+            """
+            Compute the indices of non-zero elements based on the estimates of w and z. Sets the output to non_zero_idx.
+
+            Returns:
+                None
+            """
+            gamma = np.divide(
+                np.abs(self.w_estimates[-1]), np.sqrt(self.z_estimates[-1])
+            )
+            tmp = np.nonzero(gamma > np.finfo(float).eps)
+            self.non_zero_idx = tmp[0]
 
     def get_results(
-        self, zero_th: float = None
-    ) -> List[MultiVariableFunction]:
-        zero_idx = list()
-        if len(self.w_estimates) == 0:
-            raise ValueError(
-                "SBL object contains no results! Did you run compute_model_structure()?"
-            )
+            self, zero_th: float = None
+        ) -> List[MultiVariableFunction]:
+            """
+            Returns the results of the SBL object.
 
-        w_est = self.w_estimates[-1]
-        # update the dictionary functions with the estimated weights
-        for d_f, w in zip(self.dict_fcns, w_est):
-            d_f.constant = w
+            Args:
+                zero_th (float, optional): Threshold value for considering weights as zero. Defaults to None.
 
-        if zero_th is not None:
-            zero_idx = [
-                idx for idx, w in enumerate(w_est) if abs(w) <= zero_th
-            ]
+            Returns:
+                List[MultiVariableFunction]: List of dictionary functions with estimated weights.
+            """
+            zero_idx = list()
+            if len(self.w_estimates) == 0:
+                raise ValueError(
+                    "SBL object contains no results! Did you run compute_model_structure()?"
+                )
 
-        if len(zero_idx) > 0:
-            d_fcns = copy.deepcopy(self.dict_fcns)
-            for idx in sorted(zero_idx, reverse=True):
-                del d_fcns[idx]
-            return d_fcns
-        else:
-            return self.dict_fcns
+            w_est = self.w_estimates[-1]
+            # update the dictionary functions with the estimated weights
+            for d_f, w in zip(self.dict_fcns, w_est):
+                d_f.constant = w
+
+            if zero_th is not None:
+                zero_idx = [
+                    idx for idx, w in enumerate(w_est) if abs(w) <= zero_th
+                ]
+
+            if len(zero_idx) > 0:
+                d_fcns = copy.deepcopy(self.dict_fcns)
+                for idx in sorted(zero_idx, reverse=True):
+                    del d_fcns[idx]
+                return d_fcns
+            else:
+                return self.dict_fcns
 
 
 class BatchSBL(object):

@@ -37,27 +37,63 @@ _watchdog.terminal = True
 
 
 class SolveStateSpaceModel(object):
+    """
+    A class that represents a solver for state space models.
+
+    Args:
+        ss_model (object): The state space model to solve.
+        initial_conditions (list): The initial conditions for the state variables.
+        tspan (tuple): The time span for the simulation.
+        inputs (dict, optional): The input signals to the system. Defaults to None.
+
+    Attributes:
+        ss_model (object): The state space model to solve.
+        states (list): The list of state variables.
+        init_cond (list): The initial conditions for the state variables.
+        tspan (tuple): The time span for the simulation.
+        inputs (dict): The input signals to the system.
+        sol (object): The solution of the state space model.
+
+    Methods:
+        compute_solution: Computes the solution of the state space model.
+        _compute_solution: Helper method to compute the solution.
+        _check_ode_config: Helper method to check the ODE configuration.
+
+    """
+
     def __init__(self, ss_model, initial_conditions, tspan, inputs=None):
         self.ss_model = ss_model
         self.states = list(ss_model.state_vector.keys())
         self.init_cond = initial_conditions
         self.tspan = tspan
         self.inputs = inputs
-        # Event object used to send signals from one thread to another
         self.sol = None
 
     def compute_solution(
         self, output_time=None, max_run_time=20, ode_config=None
     ):
+        """
+        Computes the solution of the state space model.
+
+        Args:
+            output_time (array_like, optional): The time points at which to compute the solution. Defaults to None.
+            max_run_time (float, optional): The maximum run time for the computation. Defaults to 20.
+            ode_config (dict, optional): The configuration for the ODE solver. Defaults to None.
+
+        Returns:
+            object: The solution of the state space model.
+
+        Raises:
+            RuntimeError: If no information is received from the ODE integrator.
+
+        """
         ode_config = SolveStateSpaceModel._check_ode_config(ode_config)
         action_thread = Thread(
             target=self._compute_solution, args=(output_time, ode_config)
         )
 
-        # Here we start the thread and we wait 5 seconds before the code continues to execute.
         action_thread.start()
         action_thread.join(timeout=max_run_time)
-        # We send a signal that tells the other thread to stop.
         stop_event.set()
         t = time.process_time()
         counter = 1
@@ -98,6 +134,16 @@ class SolveStateSpaceModel(object):
 
     @staticmethod
     def _check_ode_config(ode_config):
+        """
+        Helper method to check the ODE configuration.
+
+        Args:
+            ode_config (dict): The configuration for the ODE solver.
+
+        Returns:
+            dict: The updated ODE configuration.
+
+        """
         default_ode_config = {
             "method": "RK45",
             "use_jac": False,

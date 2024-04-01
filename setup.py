@@ -15,7 +15,7 @@ setup(
         "sympy",
         "matplotlib",
         "cvxpy",
-        "sklearn",
+        "scikit-learn",
         "pandas",
         "statsmodels",
     ],

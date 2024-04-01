@@ -4,7 +4,7 @@ matplotlib
 scipy
 cvxpy
 sympy
-sklearn
+scikit-learn
 bokeh
 pandas
 statsmodels

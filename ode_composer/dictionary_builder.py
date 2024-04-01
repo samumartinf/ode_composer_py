@@ -5,23 +5,51 @@ from itertools import combinations_with_replacement
 from sympy import latex
 
 
+from typing import List, Dict
+import numpy as np
+
 class DictionaryBuilder(object):
+    """Provides functionality for generating dictionaries used by the SBL algorithm.
+    """
     def __init__(self, dict_fcns: List[str]):
+        """
+        Initializes a DictionaryBuilder object.
+
+        Args:
+            dict_fcns: A list of dictionary functions as strings.
+
+        """
         self.dict_fcns: List[MultiVariableFunction] = list()
         self.regressor_mtx = None
         for d_f in dict_fcns:
             self.add_dict_fcn(d_f)
 
     def add_dict_fcn(self, d_f: str):
+        """
+        Adds a dictionary function to the list of dictionary functions.
+
+        Args:
+            d_f: A symbolic expression representing a function.
+
+        """
         dict_fcn = MultiVariableFunction.create_function(
             rhs_fcn=d_f, parameters={}, weight=1.0
         )
         self.dict_fcns.append(dict_fcn)
 
     def evaluate_dict(self, input_data: Dict) -> np.ndarray:
-        """Evaluates the symbolic expressions stored in the dictionary with input data.
+        """
+        Evaluates the symbolic expressions stored in the dictionary with input data.
 
-        The evaluated dictionary, referred to as regressor matrix attribute, is returned."""
+        The evaluated dictionary, referred to as regressor matrix attribute, is returned.
+
+        Args:
+            input_data: A dictionary containing the input data.
+
+        Returns:
+            The evaluated dictionary as a numpy array.
+
+        """
         reg_mtx = []
         for idx, d_fcn in enumerate(self.dict_fcns):
             reg_mtx.append(
@@ -50,9 +78,10 @@ class DictionaryBuilder(object):
         add_states=True,
         add_inputs=True,
     ):
-        """Build a dictionary with massaction kinetic terms.
+        """
+        Build a dictionary with massaction kinetic terms.
 
-        based on the number of states and the maximum order (or chemical complex size)
+        Based on the number of states and the maximum order (or chemical complex size),
         this function generates all the possible polynomial terms.
 
         >>> db = DictionaryBuilder.from_mak_generator(number_of_states=2, max_order=2)
@@ -64,11 +93,14 @@ class DictionaryBuilder(object):
         'x1*x1 | x1*x2 | u1*x1 | x2*x2 | u1*x2 | u1*u1'
 
         Args:
-            number_of_states: number of states the model has, e.g. two means (x_1,x_2)
-            max_order: the maximum number of states in polynomial term, e.g. max_order is three means x_1*x_2^2,  in a two state system
-            number_of_inputs: that are added to the dictionary function (as massaction kinetics terms)
+            number_of_states: The number of states the model has.
+            max_order: The maximum number of states in a polynomial term.
+            number_of_inputs: The number of inputs added to the dictionary function.
+            add_states: Whether to add states to the dictionary function.
+            add_inputs: Whether to add inputs to the dictionary function.
 
-        Returns: DictionaryBuilder object
+        Returns:
+            A DictionaryBuilder object.
 
         """
         if number_of_states < 1:

@@ -18,10 +18,12 @@ class StateSpaceModel(object):
         inputs: List[str] = None,
     ):
         """
+        Represents a state space model.
 
         Args:
-            states:
-            parameters:
+            states (Dict[str, Dict[str, str]]): A dictionary mapping state variables to their corresponding right-hand side equations.
+            parameters (Dict[str, float]): A dictionary of parameter values.
+            inputs (List[str], optional): A list of input variables. Defaults to None.
         """
         self.state_vector: Dict[str, List[MultiVariableFunction]] = dict()
         self.inputs = inputs
@@ -109,6 +111,17 @@ class StateSpaceModel(object):
         return ss
 
     def get_parameter_table(self, latex_format=False):
+        """
+        Generate a parameter table for the state space model.
+
+        Args:
+            latex_format (bool, optional): Determines the format of the table. If True, the table will be formatted in LaTeX. 
+                If False, the table will be formatted in plain text. Defaults to False.
+
+        Returns:
+            str: The parameter table as a string.
+
+        """
         # determine the width of the table
         max_terms = max([len(v) for v in self.state_vector.values()])
         # variable for the return string

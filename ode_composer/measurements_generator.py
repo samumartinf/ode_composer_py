@@ -5,6 +5,17 @@ import numpy as np
 
 
 class MeasurementsGenerator(object):
+    """
+    A class that provides functionality to generate measurements from a StateSpaceModel.
+
+    Methods:
+        get_measurements: Generates measurements based on the solution of the ODE system.
+
+    Attributes:
+        ss (StateSpaceModel): The state space model representing the ODE system.
+        sol (scipy.integrate.OdeSolution): The solution of the ODE system.
+    """
+
     def __init__(
         self,
         ss: StateSpaceModel,
@@ -12,6 +23,19 @@ class MeasurementsGenerator(object):
         initial_values: Dict[str, float],
         data_points: int = None,
     ):
+        """
+        Initializes a MeasurementsGenerator object.
+
+        Args:
+            ss (StateSpaceModel): The state space model representing the ODE system.
+            time_span (List[float]): The time span over which to solve the ODE system.
+            initial_values (Dict[str, float]): The initial values of the state variables.
+            data_points (int, optional): The number of data points to generate. If not provided,
+                the time points will be obtained from the solution of the ODE system.
+
+        Raises:
+            ValueError: If the integration fails.
+        """
         self.ss = ss
         states = initial_values.keys()
         if data_points is None:
@@ -32,6 +56,18 @@ class MeasurementsGenerator(object):
         self.sol = sol
 
     def get_measurements(self, SNR_db=None):
+        """
+        Generates measurements based on the solution of the ODE system.
+
+        Args:
+            SNR_db (float, optional): Signal-to-Noise Ratio in decibels. If provided, the measurements
+                will be corrupted with additive white Gaussian noise.
+
+        Returns:
+            tuple: A tuple containing the time points and the generated measurements.
+                - The time points are obtained from the solution of the ODE system.
+                - The measurements are obtained by adding noise to the solution, if SNR_db is provided.
+        """
         if SNR_db is not None:
             y_measured = np.zeros(shape=self.sol.y.shape)
             SNR = 10 ** (SNR_db / 10)
